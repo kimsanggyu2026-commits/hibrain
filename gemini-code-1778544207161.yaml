@@ -1,0 +1,32 @@
+name: Hibrain History Job Notifier
+
+on:
+  schedule:
+    - cron: '30 * * * *'  # 국편위 알림과 겹치지 않게 매시간 30분에 실행
+  workflow_dispatch:
+
+jobs:
+  run-job-bot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+      - name: Run logic
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID_JOB: ${{ secrets.CHAT_ID_JOB }}
+        run: python hibrain_main.py
+      - name: Update DB
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add last_link_hibrain.txt
+          git commit -m "Update Hibrain record" || echo "No changes"
+          git push
